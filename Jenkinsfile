@@ -78,7 +78,7 @@ pipeline {
                     netlify --version
                     echo "Deploy to staging SITE ID: $NETLIFY_SITE_ID"
                     netlify status
-                    netlify deploy --dir=build
+                    netlify deploy --dir=build --json deploy-output.json
                 '''
             }
         }
@@ -86,7 +86,7 @@ pipeline {
         stage('Deploy Production') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'my-playwright'
                     reuseNode true
                 }
             }
