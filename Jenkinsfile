@@ -7,6 +7,18 @@ pipeline {
         REACT_APP_VERSION = "1.0.$BUILD_ID"
     }
     stages {
+        stage('AWS') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                }
+            }
+            steps {
+                sh '''
+                    aws --version
+                '''
+            }
+        }
         stage('Build') {
             agent {
                 docker {
@@ -73,7 +85,7 @@ pipeline {
                     echo "Deploy to staging SITE ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --json deploy-output.json
-                    jq -r '.deploy_url' deploy-output.json
+                    node-jq -r '.deploy_url' deploy-output.json
                 '''
             }
         }
