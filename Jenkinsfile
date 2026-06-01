@@ -5,6 +5,7 @@ pipeline {
         NETLIFY_SITE_ID = '921b1f53-85ad-4f95-afce-ba8532633848'
         NETLIFY_AUTH_TOKEN = credentials('Netlify_token')
         REACT_APP_VERSION = "1.0.$BUILD_ID"
+        AWS_S3_JENKINS_BUCKET = credentials('aws-s3-bucket')
     }
     stages {
         stage('AWS') {
@@ -14,12 +15,15 @@ pipeline {
                     args "--entrypoint=''"
                 }
             }
+            environment {
+                AWS_S3_BUCKET = 'learn-jenkins-20240530307'
+            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'my-aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     sh '''
                         aws --version
-                        echo "hello s3" > index.html
-                        aws s3 cp index.html s3://learn-jenkins-20240530307/index.html
+                        echo "hello s3 v2" > index.html
+                        aws s3 cp index.html s3://$AWS_S3_BUCKET/index.html
                     '''
                 }
             }
