@@ -8,26 +8,6 @@ pipeline {
         AWS_S3_JENKINS_BUCKET = credentials('aws-s3-bucket')
     }
     stages {
-        stage('AWS') {
-            agent {
-                docker {
-                    image 'amazon/aws-cli'
-                    args "--entrypoint=''"
-                }
-            }
-            // environment {
-            //     AWS_S3_BUCKET = 'learn-jenkins-20240530307'
-            // }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'my-aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                    sh '''
-                        aws --version
-                        echo "hello s3 v3" > index.html
-                        aws s3 cp index.html s3://$AWS_S3_JENKINS_BUCKET/index.html
-                    '''
-                }
-            }
-        }
         stage('Build') {
             agent {
                 docker {
@@ -44,6 +24,26 @@ pipeline {
                     npm run build
                     ls -la
                 '''
+            }
+        }
+        stage('AWS') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                    args "--entrypoint=''"
+                }
+            }
+            // environment {
+            //     AWS_S3_BUCKET = 'learn-jenkins-20240530307'
+            // }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'my-aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                    sh '''
+                        aws --version
+                        echo "hello s3 v3" > index.html
+                        aws s3 sync build s3://$AWS_S3_JENKINS_BUCKET
+                    '''
+                }
             }
         }
         stage ('Test') {
@@ -94,7 +94,7 @@ pipeline {
                     echo "Deploy to staging SITE ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --json deploy-output.json
-                    node-jq -r '.deploy_url' deploy-output.json
+                    jq -r '.deploy_url' deploy-output.json
                 '''
             }
         }
