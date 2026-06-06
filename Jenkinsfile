@@ -4,6 +4,7 @@ pipeline {
     environment {
         REACT_APP_VERSION = "1.0.$BUILD_ID"
         AWS_S3_JENKINS_BUCKET = credentials('aws-s3-bucket')
+        AWS_DEFAULT_REGION = 'us-east-1'
     }
     stages {
         stage('Deploy to AWS') {
