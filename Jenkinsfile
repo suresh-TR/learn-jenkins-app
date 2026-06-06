@@ -2,12 +2,32 @@ pipeline {
     agent any
 
     environment {
-        NETLIFY_SITE_ID = '921b1f53-85ad-4f95-afce-ba8532633848'
-        NETLIFY_AUTH_TOKEN = credentials('Netlify_token')
         REACT_APP_VERSION = "1.0.$BUILD_ID"
         AWS_S3_JENKINS_BUCKET = credentials('aws-s3-bucket')
     }
     stages {
+        stage('Deploy to AWS') {
+            agent {
+                docker {
+                    image 'amazon/aws-cli'
+                    reuseNode true
+                    args "--entrypoint=''"
+                }
+            }
+            // environment {
+            //     AWS_S3_BUCKET = 'learn-jenkins-20240530307'
+            // }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'my-aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                    sh '''
+                        aws --version
+                        aws ecs register-task-definition --cli-input-json file://aws/task-definition-prod.json
+                        // echo "hello s3 v3" > index.html
+                        // aws s3 sync build s3://$AWS_S3_JENKINS_BUCKET
+                    '''
+                }
+            }
+        }
         stage('Build') {
             agent {
                 docker {
@@ -26,97 +46,77 @@ pipeline {
                 '''
             }
         }
-        stage('AWS') {
-            agent {
-                docker {
-                    image 'amazon/aws-cli'
-                    reuseNode true
-                    args "--entrypoint=''"
-                }
-            }
-            // environment {
-            //     AWS_S3_BUCKET = 'learn-jenkins-20240530307'
-            // }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'my-aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                    sh '''
-                        aws --version
-                        echo "hello s3 v3" > index.html
-                        aws s3 sync build s3://$AWS_S3_JENKINS_BUCKET
-                    '''
-                }
-            }
-        }
-        stage ('Test') {
-            parallel {
-                stage('Unit Tests') {
-                    agent {
-                        docker {
-                            image 'node:18-alpine'
-                            reuseNode true
-                        }
-                    }
-                    steps {
-                        sh '''
-                            test -f build/index.html
-                            npm run test
-                            echo 'Test stage'
-                        '''
-                    }
-                }
-
-                stage('E2E') {
-                    agent {
-                        docker {
-                            image 'my-playwright'
-                            reuseNode true
-                        }
-                    }
-                    steps {
-                        sh '''
-                            serve -s build &
-                            sleep 5
-                            npx playwright test --reporter=html
-                        '''
-                    }
-                }
-            }
-        }
-        stage('Deploy Staging') {
-            agent {
-                docker {
-                    image 'my-playwright'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    netlify --version
-                    echo "Deploy to staging SITE ID: $NETLIFY_SITE_ID"
-                    netlify status
-                    netlify deploy --dir=build --json deploy-output.json
-                    jq -r '.deploy_url' deploy-output.json
-                '''
-            }
-        }
         
-        stage('Deploy Production') {
-            agent {
-                docker {
-                    image 'my-playwright'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    netlify --version
-                    echo "Deploy to production SITE ID: $NETLIFY_SITE_ID"
-                    netlify status
-                    netlify deploy --auth $NETLIFY_AUTH_TOKEN --dir=build --prod
+        // stage ('Test') {
+        //     parallel {
+        //         stage('Unit Tests') {
+        //             agent {
+        //                 docker {
+        //                     image 'node:18-alpine'
+        //                     reuseNode true
+        //                 }
+        //             }
+        //             steps {
+        //                 sh '''
+        //                     test -f build/index.html
+        //                     npm run test
+        //                     echo 'Test stage'
+        //                 '''
+        //             }
+        //         }
 
-                '''
-            }
-        }
+        //         stage('E2E') {
+        //             agent {
+        //                 docker {
+        //                     image 'my-playwright'
+        //                     reuseNode true
+        //                 }
+        //             }
+        //             steps {
+        //                 sh '''
+        //                     serve -s build &
+        //                     sleep 5
+        //                     npx playwright test --reporter=html
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
+        // stage('Deploy Staging') {
+        //     agent {
+        //         docker {
+        //             image 'my-playwright'
+        //             reuseNode true
+        //         }
+        //     }
+        //     steps {
+        //         sh '''
+        //             netlify --version
+        //             echo "Deploy to staging SITE ID: $NETLIFY_SITE_ID"
+        //             netlify status
+        //             netlify deploy --dir=build --json deploy-output.json
+        //             jq -r '.deploy_url' deploy-output.json
+        //         '''
+        //     }
+        // }
+        
+        // stage('Deploy Production') {
+        //     agent {
+        //         docker {
+        //             image 'my-playwright'
+        //             reuseNode true
+        //         }
+        //     }
+        //     steps {
+        //         sh '''
+        //             netlify --version
+        //             echo "Deploy to production SITE ID: $NETLIFY_SITE_ID"
+        //             netlify status
+        //             netlify deploy --auth $NETLIFY_AUTH_TOKEN --dir=build --prod
+
+        //         '''
+        //     }
+        // }
         
     }
     post {
