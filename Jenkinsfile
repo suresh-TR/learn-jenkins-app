@@ -23,8 +23,6 @@ pipeline {
                     sh '''
                         aws --version
                         aws ecs register-task-definition --cli-input-json file://aws/task-definition-prod.json
-                        // echo "hello s3 v3" > index.html
-                        // aws s3 sync build s3://$AWS_S3_JENKINS_BUCKET
                     '''
                 }
             }
