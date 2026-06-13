@@ -1,23 +1,23 @@
 name: Listing S3 Bucket
 on:
   push:
-    branches:  
-    - main
-  workflow_dispatch: 
+    branches:
+      - main
+  workflow_dispatch:
 permissions:
   id-token: write
-jobs: 
+jobs:
   listing_buckets:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Aws Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{secrets.IAM_ROLE}}
-          aws-region: ${{secrets.AWS_REGION}}
-       - name: List S3 Buckets
+          role-to-assume: ${{ secrets.IAM_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: List S3 Buckets
         env:
-          AWS_REGION: ${{secrets.AWS_REGION}}
-          runs: 
-            echo  "Listing s3 buckets"
-            aws s3 ls 
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          echo "Listing s3 buckets"
+          aws s3 ls
