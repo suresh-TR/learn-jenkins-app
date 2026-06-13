@@ -4,7 +4,8 @@ on:
     branches:  
     - main
   workflow_dispatch: 
-
+permissions:
+  id-token: write
 jobs: 
   listing_buckets:
     runs-on: ubuntu-latest
