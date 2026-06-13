@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
 permissions:
-  id-token: write
+  id-token: read
 jobs:
   listing_buckets:
     runs-on: ubuntu-latest
